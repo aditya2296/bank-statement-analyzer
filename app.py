@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.analyzer import summary_stats, inflow_outflow_chart, balance_line_chart
+from utils.analyzer import summary_stats, inflow_outflow_chart
 from utils.parser import extract_transactions
 
 st.set_page_config("HDFC Bank Analyzer", layout="wide")
