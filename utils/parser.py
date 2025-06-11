@@ -54,5 +54,5 @@ def extract_transactions(file, filter_deposits_only, filter_withdrawl_only, min_
         df = df[df['Date'] >= pd.to_datetime(start_date)]
     if end_date:
         df = df[df['Date'] <= pd.to_datetime(end_date)]
-
+    df['Date'] = df['Date'].dt.strftime('%#d %B, %Y')
     return df

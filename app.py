@@ -5,40 +5,66 @@ from utils.parser import extract_transactions
 st.set_page_config("HDFC Bank Analyzer", layout="wide")
 st.title("🏦 HDFC Bank Statement Analyzer")
 
-uploaded_file = st.file_uploader("Upload your HDFC Bank CSV Statement", type="csv")
+uploaded_file = st.file_uploader("📁 Upload your HDFC Bank CSV Statement", type="csv")
 
 if uploaded_file:
-    filter_type = st.radio(
-        "Filter Type",
-        options=["All Transactions", "Only Deposits", "Only Withdrawals"],
-        index=0,
-        horizontal=True
-    )
 
-    search_narration = st.text_input("🔍 Search Narration (optional)", placeholder="e.g. ATM, NEFT, Salary")
+    with st.form("filters_form"):
+        # Initialize session state for reset
+        if "reset" not in st.session_state:
+            st.session_state.reset = False
+        # Transaction Type Radio Buttons
+        filter_type = st.radio(
+            label="Select Transaction Type",
+            options=["All Transactions", "Only Deposits", "Only Withdrawals"],
+            index=0,
+            horizontal=True,
+            key="filter_type"
+        )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = st.date_input("📅 Start Date", value=None)
-    with col2:
-        end_date = st.date_input("📅 End Date", value=None)
+        # Narration search and date range
+        with st.expander("🔎 Advanced Filters"):
+            search_narration = st.text_input("🔍 Narration Contains", placeholder="e.g. ATM, NEFT, Salary", key="narration")
 
-    # Set flags based on radio choice
-    filter_deposits = filter_type == "Only Deposits"
-    filter_withdrawls = filter_type == "Only Withdrawals"
-    if filter_deposits or filter_type == "All Transactions":
-        min_deposit_amount = st.number_input("Minimum Deposit Amount (₹)", min_value=0.0, value=0.0, step=1000.0) # ✅ New: User can enter a minimum deposit amount
-    else:
-        min_deposit_amount = None
-    if filter_withdrawls or filter_type == "All Transactions":
-        min_withdrawl_amount = st.number_input("Minimum Withdrawl Amount (₹)", min_value=0.0, value=0.0, step=1000.0) # ✅ New: User can enter a minimum withdrawl amount
-    else:
-        min_withdrawl_amount = None
-    if filter_type == "All Transactions":
-        if min_deposit_amount == 0.0:
-            min_deposit_amount = None
-        if min_withdrawl_amount == 0.0:
-            min_withdrawl_amount = None
+            col1, col2 = st.columns(2)
+            with col1:
+                start_date = st.date_input("📅 Start Date", value=None, key="start_date")
+            with col2:
+                end_date = st.date_input("📅 End Date", value=None, key="end_date")
+
+            # Amount filters based on type
+            col3, col4 = st.columns(2)
+            with col3:
+                if filter_type in ["Only Deposits", "All Transactions"]:
+                    min_deposit_amount = st.number_input("⬆️ Minimum Deposit Amount (₹)", min_value=0.0, value=0.0, step=1000.0, key="min_dep")
+                else:
+                    min_deposit_amount = None
+
+            with col4:
+                if filter_type in ["Only Withdrawals", "All Transactions"]:
+                    min_withdrawl_amount = st.number_input("⬇️ Minimum Withdrawal Amount (₹)", min_value=0.0, value=0.0, step=1000.0, key="min_wd")
+                else:
+                    min_withdrawl_amount = None
+
+        # Set filter flags
+        filter_deposits = filter_type == "Only Deposits"
+        filter_withdrawls = filter_type == "Only Withdrawals"
+
+        # Normalize values
+        if filter_type == "All Transactions":
+            min_deposit_amount = min_deposit_amount or None
+            min_withdrawl_amount = min_withdrawl_amount or None
+        # Buttons
+        col_submit, col_reset = st.columns(2)
+        with col_reset:
+            reset_clicked = st.form_submit_button("🔄 Reset Filters")
+        with col_submit:
+            submitted = st.form_submit_button("✅ Apply Filters")
+
+        # Handle Reset
+        if reset_clicked:
+            st.session_state.clear()
+            st.rerun()
     try:
         df = extract_transactions(
             uploaded_file,
