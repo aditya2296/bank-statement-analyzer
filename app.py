@@ -9,6 +9,25 @@ uploaded_file = st.file_uploader("📁 Upload your HDFC Bank CSV Statement", typ
 
 if uploaded_file:
 
+    # Set default widget values if not present in session
+    if "filter_type" not in st.session_state:
+        st.session_state["filter_type"] = "All Transactions"
+
+    if "narration" not in st.session_state:
+        st.session_state["narration"] = ""
+
+    if "start_date" not in st.session_state:
+        st.session_state["start_date"] = None
+
+    if "end_date" not in st.session_state:
+        st.session_state["end_date"] = None
+
+    if "min_dep" not in st.session_state:
+        st.session_state["min_dep"] = 0.0
+
+    if "min_wd" not in st.session_state:
+        st.session_state["min_wd"] = 0.0
+
     with st.form("filters_form"):
         # Initialize session state for reset
         if "reset" not in st.session_state:
@@ -17,32 +36,32 @@ if uploaded_file:
         filter_type = st.radio(
             label="Select Transaction Type",
             options=["All Transactions", "Only Deposits", "Only Withdrawals"],
-            index=0,
+            index=["All Transactions", "Only Deposits", "Only Withdrawals"].index(st.session_state["filter_type"]),
             horizontal=True,
             key="filter_type"
         )
 
         # Narration search and date range
         with st.expander("🔎 Advanced Filters"):
-            search_narration = st.text_input("🔍 Narration Contains", placeholder="e.g. ATM, NEFT, Salary", key="narration")
+            search_narration = st.text_input("🔍 Narration Contains", placeholder="e.g. ATM, NEFT, Salary", key="narration", value=st.session_state["narration"])
 
             col1, col2 = st.columns(2)
             with col1:
-                start_date = st.date_input("📅 Start Date", value=None, key="start_date")
+                start_date = st.date_input("📅 Start Date", value=st.session_state["start_date"], key="start_date")
             with col2:
-                end_date = st.date_input("📅 End Date", value=None, key="end_date")
+                end_date = st.date_input("📅 End Date", value=st.session_state["end_date"], key="end_date")
 
             # Amount filters based on type
             col3, col4 = st.columns(2)
             with col3:
                 if filter_type in ["Only Deposits", "All Transactions"]:
-                    min_deposit_amount = st.number_input("⬆️ Minimum Deposit Amount (₹)", min_value=0.0, value=0.0, step=1000.0, key="min_dep")
+                    min_deposit_amount = st.number_input("⬆️ Minimum Deposit Amount (₹)", min_value=0.0, value=st.session_state["min_dep"], step=1000.0, key="min_dep")
                 else:
                     min_deposit_amount = None
 
             with col4:
                 if filter_type in ["Only Withdrawals", "All Transactions"]:
-                    min_withdrawl_amount = st.number_input("⬇️ Minimum Withdrawal Amount (₹)", min_value=0.0, value=0.0, step=1000.0, key="min_wd")
+                    min_withdrawl_amount = st.number_input("⬇️ Minimum Withdrawal Amount (₹)", min_value=0.0, value=st.session_state["min_wd"], step=1000.0, key="min_wd")
                 else:
                     min_withdrawl_amount = None
 
@@ -61,9 +80,10 @@ if uploaded_file:
         with col_submit:
             submitted = st.form_submit_button("✅ Apply Filters")
 
-        # Handle Reset
         if reset_clicked:
-            st.session_state.clear()
+            for key in ["filter_type", "narration", "start_date", "end_date", "min_dep", "min_wd"]:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.rerun()
     try:
         df = extract_transactions(
