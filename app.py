@@ -1,11 +1,21 @@
 import streamlit as st
 from utils.analyzer import summary_stats, inflow_outflow_chart
 from utils.parser import extract_transactions
+from login import login
 
-st.set_page_config("HDFC Bank Analyzer", layout="wide")
-st.title("🏦 HDFC Bank Statement Analyzer")
+# Check login status
+if "authenticated" not in st.session_state or not st.session_state.authenticated:
+    login()
+    st.stop()
+st.set_page_config("HDFC Statement Analyzer", layout="wide")
+st.title("🏦 HDFC Account Statement Analyzer")
 
-uploaded_file = st.file_uploader("📁 Upload your HDFC Bank CSV Statement", type="csv")
+uploaded_file = st.file_uploader(
+    label="",
+    type="csv",
+    label_visibility="collapsed",  # Hide default label
+    accept_multiple_files=False
+)
 
 if uploaded_file:
 
@@ -38,6 +48,7 @@ if uploaded_file:
             options=["All Transactions", "Only Deposits", "Only Withdrawals"],
             index=["All Transactions", "Only Deposits", "Only Withdrawals"].index(st.session_state["filter_type"]),
             horizontal=True,
+            label_visibility="collapsed",
             key="filter_type"
         )
 
@@ -102,7 +113,6 @@ if uploaded_file:
                 use_container_width=True,
                 hide_index=True)
 
-        st.subheader("📌 Summary")
         debit, credit, balance = summary_stats(df)
         c1, c2, c3 = st.columns(3)
         c1.metric("⬇️ Total Debits", f"{debit:,.2f}")
